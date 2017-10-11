@@ -19,6 +19,7 @@
   "dependencies": {
     "express": "^4.16.2",
     "mongodb": "^2.2.31",
-    "node-quickbooks": "^2.0.18"
+    "node-quickbooks": "^2.0.18",
+    "nodemon": "^1.12.1"
   }
 }

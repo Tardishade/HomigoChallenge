@@ -11,7 +11,7 @@ var session = require('express-session');
 var express = require('express');
 var app = express();
 // Quickbooks
-var QuickBooks = require('../index');
+var QuickBooks = require('node-quickbooks');
 var Tokens = require('csrf');
 var csrf = new Tokens();
 // Mongodb
@@ -19,10 +19,13 @@ var MongoClient = require('mongodb').MongoClient;
 var assert = require('assert');
 var url = 'mongodb://localhost:27017/homigoChallenge';
 
+var pug = require('pug');
+
 QuickBooks.setOauthVersion('2.0');
 
 app.set('port', port);
 app.set('views', 'views');
+app.set('view engine', 'pug');
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser('brad'));
@@ -103,4 +106,11 @@ app.get('/callback', function (req, res) {
   res.send('<!DOCTYPE html><html lang="en"><head></head><body><script>window.opener.location.reload(); window.close();</script></body></html>');
 });
 
+app.get('/tables', function (req, res) {
+    res.render('tables', {});
+});
 
+app.get('/sync', function (req, res) {
+    res.render('tables', {});
+    console.log("Sync was pressed");
+});

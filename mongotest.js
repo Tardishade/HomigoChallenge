@@ -15,20 +15,10 @@ MongoClient.connect(url, function(err, db) {
     });
 });
 
-var insertDocuments = function(db, callback) {
-  // Get the documents collection
-  var collection = db.collection('documents');
-  // Insert some documents
-  collection.insertMany([
-    {a : 1}, {a : 2}, {a : 3}
-  ], function(err, result) {
-    assert.equal(err, null);
-    assert.equal(3, result.result.n);
-    console.log(result.ops.length + " documents inserted");
-    console.log("Inserted 3 documents into the collection");
-    callback(result);
-  });
-}
+var insertDocument = function(db, collection, document) {
+  var myCollection = db.collection(collection);
+  myCollection.insert(document);
+};
 
 var findDocuments = function(db, callback) {
     // Get the documents collection

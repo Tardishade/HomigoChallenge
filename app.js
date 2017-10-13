@@ -107,13 +107,11 @@ app.get('/callback', function (req, res) {
         app.get('/tables', function (req, res) {  
             
             MongoClient.connect(url, function(err, db) {
-
                 assert.equal(null, err);
                 console.log("Connected successfully to server");
-                sendStuff(db, (result) => {
-                    res.render('tables', result);
-                }, qbo);
-
+                await sendStuff(db, qbo);
+                
+                
             });
         });
         
@@ -128,20 +126,44 @@ app.get('/callback', function (req, res) {
 
 });
 
-function sendStuff(db, callback, qbo) {
-    var sendObj;
-    attributeArray.forEach(function(attribute) {      
-        mongot.removeDocuments(db, () => {
-            console.log("Documents removed from " + attribute + "collection")}, attribute);
+async function myCustomers (qbo, attribute) {
+    qbo.findCustomers(function (_, customers) {
+        customers.QueryResponse.Customer.forEach((element) => { 
+            mongot.insertDocument(db, attribute, element);
+        });
+    });    
+}
+
+async function myInvoices (qbo, attribute) {
+    qbo.findInvoices(function (_, invoices) {
+        invoices.QueryResponse.Invoice.forEach((element) => { 
+            mongot.insertDocument(db, attribute, element);
+        });
+    });    
+}
+
+async function myBills (qbo, attribute, db) {
+    qbo.findBills(function (_, bills) {
+        customers.QueryResponse.Bill.forEach((element) => { 
+            mongot.insertDocument(db, attribute, element);
+        });
+    });    
+}
+
+
+
+function sendStuff(db, qbo, callback) {
+    
+    attributeArray.forEach(function(attribute) { 
+
+        await mongot.removeDocuments(db, attribute);
                             
-            if (attribute === "Customers") {
-                qbo.findCustomers(function (_, customers) {
-                    customers.QueryResponse.Customer.forEach((element) => { 
-                        mongot.insertDocument(db, attribute, element);
-                        }, attribute);
-                        mongot.findDocuments(db, (result) => {
-                            sendObj[attribute] = mongot.createSpecialArray(attribute, result);
-                    });
+        if (attribute === "Customers") {
+            
+            mongot.findDocuments(db, (result) => {
+                sendObj[attribute] = mongot.createSpecialArray(attribute, result);
+            });
+                        
                 });
             } else if (attribute === "Bills") {
                 qbo.findBills(function (_, bills) {
@@ -167,6 +189,5 @@ function sendStuff(db, callback, qbo) {
                 });
             }
     });    
-    callback(sendObj);
 }
 

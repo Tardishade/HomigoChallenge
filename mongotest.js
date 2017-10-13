@@ -3,9 +3,10 @@ var assert = require('assert');
 
 var url = 'mongodb://localhost:27017/homigoChallenge';
 
-exports.insertDocument = function(db, collection, document) {
+exports.insertDocument = function(db, collection, document, callback) {
   var myCollection = db.collection(collection);
   myCollection.insert(document);
+  callback();
 };
 
 exports.findDocuments = function(db, collection, callback) {
@@ -15,7 +16,7 @@ exports.findDocuments = function(db, collection, callback) {
     });
 };
 
-exports.removeDocuments = function(db, callback, collection) {
+exports.removeDocuments = async function(db, collection) {
     // Get the documents collection
     var myCollection = db.collection(collection);
     // Delete all documents

@@ -1,0 +1,11 @@
+h1 {
+    font-family: Helvetica;
+    color: rgb(53, 56, 56);
+    font-size:20px;
+}
+
+.button {
+    vertical-align: right;
+    margin: 15px;
+    
+}

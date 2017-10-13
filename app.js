@@ -104,63 +104,69 @@ app.get('/callback', function (req, res) {
                                 accessToken.refresh_token /* refresh token */);
 
 
-
         app.get('/tables', function (req, res) {  
             
             MongoClient.connect(url, function(err, db) {
 
-                var sendObj = {};
-
                 assert.equal(null, err);
                 console.log("Connected successfully to server");
-
-                attributeArray.forEach(function(attribute) {  
-
-                    mongot.removeDocuments(db, () => {
-                        console.log("Documents removed from " + attribute + "collection")}, attribute);
-                    
-                    if (attribute === "Customers") {
-                        qbo.findCustomers(function (_, customers) {
-                            customers.QueryResponse.Customer.forEach((element) => { 
-                                mongot.insertDocument(db, attribute, element);
-                            });
-                        });
-                    } else if (attribute === "Bills") {
-                        qbo.findBills(function (_, bills) {
-                            bills.QueryResponse.Bill.forEach((element) => { 
-                                mongot.insertDocument(db, attribute, element);
-                            });
-                        });
-                    } else {
-                        qbo.findInvoices(function (_, invoices) {
-                            invoices.QueryResponse.Invoice.forEach((element) => { 
-                                mongot.insertDocument(db, attribute, element);
-                            });
-                        });
-                    }
-
-                    sendObj.attribute = mongot.createSpecialArray(mongot.findDocuments(db, attribute));
-                    //console.log(mongot.findDocuments(db, attribute));
-                });
-
-                res.render('tables', JSON.stringify(sendObj));
+                sendStuff(db, (result) => {
+                    res.render('tables', result);
+                }, qbo);
 
             });
         });
         
         app.get('/sync', function (req, res) {
-            res.render('tables', {});
-            console.log("Sync was pressed");
-            qbo.findInvoices(function (_, customers) {
-                customers.QueryResponse.Invoice.forEach((invoice) => {
-                    console.log(invoice);
-                    console.log("Sync Invoice!!")
-                    });
-                });
+            
+            //replicate '/tables'
+            
         });
     });
 
   res.send('<!DOCTYPE html><html lang="en"><head></head><body><script>window.opener.location.reload(); window.close();</script></body></html>');
 
 });
+
+function sendStuff(db, callback, qbo) {
+    var sendObj;
+    attributeArray.forEach(function(attribute) {      
+        mongot.removeDocuments(db, () => {
+            console.log("Documents removed from " + attribute + "collection")}, attribute);
+                            
+            if (attribute === "Customers") {
+                qbo.findCustomers(function (_, customers) {
+                    customers.QueryResponse.Customer.forEach((element) => { 
+                        mongot.insertDocument(db, attribute, element);
+                        }, attribute);
+                        mongot.findDocuments(db, (result) => {
+                            sendObj[attribute] = mongot.createSpecialArray(attribute, result);
+                    });
+                });
+            } else if (attribute === "Bills") {
+                qbo.findBills(function (_, bills) {
+                    bills.QueryResponse.Bill.forEach((element) => { 
+                        mongot.insertDocument(db, attribute, element);
+                        var docArr = [];
+                        mongot.findDocuments(db, (result) => {
+                            docArr = result;
+                        }, attribute);
+                        sendObj[attribute] = mongot.createSpecialArray(attribute, docArr);
+                    });
+                });
+            } else {
+                qbo.findInvoices(function (_, invoices) {
+                    invoices.QueryResponse.Invoice.forEach((element) => { 
+                        mongot.insertDocument(db, attribute, element);
+                        var docArr = [];
+                            mongot.findDocuments(db, (result) => {
+                                docArr = result;
+                            }, attribute);
+                            sendObj[attribute] = mongot.createSpecialArray(attribute, docArr);
+                    });
+                });
+            }
+    });    
+    callback(sendObj);
+}
 

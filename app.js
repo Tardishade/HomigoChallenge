@@ -10,6 +10,7 @@ var cookieParser = require('cookie-parser');
 var session = require('express-session');
 var express = require('express');
 var app = express();
+var pug = require('pug');
 // Quickbooks
 var QuickBooks = require('node-quickbooks');
 var Tokens = require('csrf');
@@ -18,8 +19,10 @@ var csrf = new Tokens();
 var MongoClient = require('mongodb').MongoClient;
 var assert = require('assert');
 var url = 'mongodb://localhost:27017/homigoChallenge';
+var mongot = require('./mongotest.js');
 
-var pug = require('pug');
+// Attributes to search for
+var attributeArray = ["Customers", "Bills", "Invoice"];
 
 QuickBooks.setOauthVersion('2.0');
 
@@ -31,17 +34,21 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser('brad'));
 app.use(session({ resave: false, saveUninitialized: false, secret: 'smith' }));
 
+// Server Starts
 app.listen(app.get('port'), function () {
     console.log('Express server listening on port ' + app.get('port'));
 });
 
+// Keys for OAuth
 var consumerKey = 'Q0WQ157ddpeqVlHdbb24Cz6TUyi0d92WFcS8G2FbhkjZ0FDbUu';
 var consumerSecret = 'Z21ACXJrTTLbpzBSppvJu2HGmQXFjnIOms81Hzag';
 
+// First route
 app.get('/', function (req, res) {
   res.redirect('/start');
 });
 
+// Start route
 app.get('/start', function (req, res) {
   res.render('intuit.ejs', { locals: { port: port, appCenter: QuickBooks.APP_CENTER_BASE } });
 });
@@ -63,6 +70,7 @@ app.get('/requestToken', function (req, res) {
   res.redirect(redirecturl);
 });
 
+// Primary route, has to be accessed before accesing any of the others.
 app.get('/callback', function (req, res) {
   var auth = (new Buffer(consumerKey + ':' + consumerSecret).toString('base64'));
 
@@ -80,37 +88,79 @@ app.get('/callback', function (req, res) {
     }
   };
 
-  request.post(postBody, function (e, r, data) {
-    var accessToken = JSON.parse(r.body);
+  var mypost = request.post(postBody, function (e, r, data) {
+        var accessToken = JSON.parse(r.body);
 
-    // save the access token somewhere on behalf of the logged in user
-    var qbo = new QuickBooks(consumerKey,
-                             consumerSecret,
-                             accessToken.access_token, /* oAuth access token */
-                             false, /* no token secret for oAuth 2.0 */
-                             req.query.realmId,
-                             true, /* use a sandbox account */
-                             true, /* turn debugging on */
-                             4, /* minor version */
-                             '2.0', /* oauth version */
-                            accessToken.refresh_token /* refresh token */);
+        // save the access token somewhere on behalf of the logged in user
+        var qbo = new QuickBooks(consumerKey,
+                                consumerSecret,
+                                accessToken.access_token, /* oAuth access token */
+                                false, /* no token secret for oAuth 2.0 */
+                                req.query.realmId,
+                                true, /* use a sandbox account */
+                                true, /* turn debugging on */
+                                4, /* minor version */
+                                '2.0', /* oauth version */
+                                accessToken.refresh_token /* refresh token */);
 
-    qbo.findInvoices(function (_, customers) {
-      customers.QueryResponse.Invoice.forEach((invoice) => {
-          console.log(JSON.stringify(invoice));
-          console.log("New Invoice!!")
+
+
+        app.get('/tables', function (req, res) {  
+            
+            MongoClient.connect(url, function(err, db) {
+
+                var sendObj = {};
+
+                assert.equal(null, err);
+                console.log("Connected successfully to server");
+
+                attributeArray.forEach(function(attribute) {  
+
+                    mongot.removeDocuments(db, () => {
+                        console.log("Documents removed from " + attribute + "collection")}, attribute);
+                    
+                    if (attribute === "Customers") {
+                        qbo.findCustomers(function (_, customers) {
+                            customers.QueryResponse.Customer.forEach((element) => { 
+                                mongot.insertDocument(db, attribute, element);
+                            });
+                        });
+                    } else if (attribute === "Bills") {
+                        qbo.findBills(function (_, bills) {
+                            bills.QueryResponse.Bill.forEach((element) => { 
+                                mongot.insertDocument(db, attribute, element);
+                            });
+                        });
+                    } else {
+                        qbo.findInvoices(function (_, invoices) {
+                            invoices.QueryResponse.Invoice.forEach((element) => { 
+                                mongot.insertDocument(db, attribute, element);
+                            });
+                        });
+                    }
+
+                    sendObj.attribute = mongot.createSpecialArray(mongot.findDocuments(db, attribute));
+                    //console.log(mongot.findDocuments(db, attribute));
+                });
+
+                res.render('tables', JSON.stringify(sendObj));
+
+            });
+        });
+        
+        app.get('/sync', function (req, res) {
+            res.render('tables', {});
+            console.log("Sync was pressed");
+            qbo.findInvoices(function (_, customers) {
+                customers.QueryResponse.Invoice.forEach((invoice) => {
+                    console.log(invoice);
+                    console.log("Sync Invoice!!")
+                    });
+                });
         });
     });
-  });
 
   res.send('<!DOCTYPE html><html lang="en"><head></head><body><script>window.opener.location.reload(); window.close();</script></body></html>');
+
 });
 
-app.get('/tables', function (req, res) {
-    res.render('tables', {});
-});
-
-app.get('/sync', function (req, res) {
-    res.render('tables', {});
-    console.log("Sync was pressed");
-});

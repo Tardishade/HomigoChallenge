@@ -5,14 +5,20 @@ var url = 'mongodb://localhost:27017/homigoChallenge';
 
 exports.insertDocument = function(db, collection, document, callback) {
   var myCollection = db.collection(collection);
-  myCollection.insert(document);
-  callback();
+  myCollection.insert(document, (err, result) => {
+    if(err) {
+      console.log("Document insert error");
+    } else {
+      console.log("inserted document");
+      callback();  
+    }
+  });
 };
 
-exports.findDocuments = function(db, collection, callback) {
-    var collection = db.collection(collection);
+exports.findDocuments = function(db, attribute, callback) {
+    var collection = db.collection(attribute);
     collection.find({}).toArray((err, result) => {
-    callback(result);
+      callback(result);
     });
 };
 

@@ -20,10 +20,9 @@ var MongoClient = require('mongodb').MongoClient;
 var assert = require('assert');
 var url = 'mongodb://localhost:27017/homigoChallenge';
 var mongot = require('./mongotest.js');
+var myAsync = require('./asyncholder.js');
 
 // Attributes to search for
-var attributeArray = ["Customers", "Bills", "Invoice"];
-
 QuickBooks.setOauthVersion('2.0');
 
 app.set('port', port);
@@ -37,6 +36,16 @@ app.use(session({ resave: false, saveUninitialized: false, secret: 'smith' }));
 // Server Starts
 app.listen(app.get('port'), function () {
     console.log('Express server listening on port ' + app.get('port'));
+});
+
+// Initialize MongoDB
+MongoClient.connect(url, function(err, db) {
+    if (err) throw err;
+    console.log("Database created!");
+    myAsync.attributeArray.forEach((attribute) => {
+        db.createCollection(attribute);
+    });
+    db.close();
 });
 
 // Keys for OAuth
@@ -105,19 +114,27 @@ app.get('/callback', function (req, res) {
 
 
         app.get('/tables', function (req, res) {  
-            
+
             MongoClient.connect(url, function(err, db) {
                 assert.equal(null, err);
                 console.log("Connected successfully to server");
-                await sendStuff(db, qbo);
-                
-                
+                myAsync.sendStuff(db, qbo, () => {
+                    res.render('tables', myAsync.sendObj);
+                });
+                db.close();
             });
         });
         
         app.get('/sync', function (req, res) {
             
-            //replicate '/tables'
+            MongoClient.connect(url, function(err, db) {
+                assert.equal(null, err);
+                console.log("Connected successfully to server");
+                myAsync.sendStuff(db, qbo, () => {
+                    res.render('tables', myAsync.sendObj);
+                });
+                db.close();
+            });
             
         });
     });
@@ -126,68 +143,7 @@ app.get('/callback', function (req, res) {
 
 });
 
-async function myCustomers (qbo, attribute) {
-    qbo.findCustomers(function (_, customers) {
-        customers.QueryResponse.Customer.forEach((element) => { 
-            mongot.insertDocument(db, attribute, element);
-        });
-    });    
-}
-
-async function myInvoices (qbo, attribute) {
-    qbo.findInvoices(function (_, invoices) {
-        invoices.QueryResponse.Invoice.forEach((element) => { 
-            mongot.insertDocument(db, attribute, element);
-        });
-    });    
-}
-
-async function myBills (qbo, attribute, db) {
-    qbo.findBills(function (_, bills) {
-        customers.QueryResponse.Bill.forEach((element) => { 
-            mongot.insertDocument(db, attribute, element);
-        });
-    });    
-}
 
 
 
-function sendStuff(db, qbo, callback) {
-    
-    attributeArray.forEach(function(attribute) { 
-
-        await mongot.removeDocuments(db, attribute);
-                            
-        if (attribute === "Customers") {
-            
-            mongot.findDocuments(db, (result) => {
-                sendObj[attribute] = mongot.createSpecialArray(attribute, result);
-            });
-                        
-                });
-            } else if (attribute === "Bills") {
-                qbo.findBills(function (_, bills) {
-                    bills.QueryResponse.Bill.forEach((element) => { 
-                        mongot.insertDocument(db, attribute, element);
-                        var docArr = [];
-                        mongot.findDocuments(db, (result) => {
-                            docArr = result;
-                        }, attribute);
-                        sendObj[attribute] = mongot.createSpecialArray(attribute, docArr);
-                    });
-                });
-            } else {
-                qbo.findInvoices(function (_, invoices) {
-                    invoices.QueryResponse.Invoice.forEach((element) => { 
-                        mongot.insertDocument(db, attribute, element);
-                        var docArr = [];
-                            mongot.findDocuments(db, (result) => {
-                                docArr = result;
-                            }, attribute);
-                            sendObj[attribute] = mongot.createSpecialArray(attribute, docArr);
-                    });
-                });
-            }
-    });    
-}
 

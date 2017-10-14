@@ -12,15 +12,16 @@ exports.insertDocument = function(db, collection, document, callback) {
 exports.findDocuments = function(db, collection, callback) {
     var collection = db.collection(collection);
     collection.find({}).toArray((err, result) => {
-      callback(result);
+    callback(result);
     });
 };
 
-exports.removeDocuments = async function(db, collection) {
+exports.removeDocuments = function(db, collection, callback) {
     // Get the documents collection
     var myCollection = db.collection(collection);
     // Delete all documents
     myCollection.remove();
+    callback();
 };
 
 exports.createSpecialArray = function(collection, data) {
@@ -75,9 +76,9 @@ function billParse(customer) {
 function invoiceParse(customer) {
   var arr = []
   (customer.Id) ? arr.push(customer.Id) : arr.push("N/A");
-  (customer.City) ? arr.push(customer.City) : arr.push("N/A");
-  (customer.Line1) ? arr.push(customer.Line1) : arr.push("N/A");
-  (customer.PostalCode) ? arr.push(customer.PostalCode) : arr.push("N/A");
+  (customer.CustomerRef.name) ? arr.push(customer.CustomerRef.name) : arr.push("N/A");
+  (customer.TotalAmt) ? arr.push(customer.TotalAmt) : arr.push("N/A");
+  (customer.BillAddr.Line1) ? arr.push(customer.PostalCode) : arr.push("N/A");
   (customer.CompanyName) ? arr.push(customer.CompanyName) : arr.push("N/A");
   (customer.PrimaryPhone.FreeFormNumber) ? arr.push(customer.PrimaryPhone.FreeFormNumber) : arr.push("N/A");
   (customer.Balance) ? arr.push(customer.Balance) : arr.push("N/A");

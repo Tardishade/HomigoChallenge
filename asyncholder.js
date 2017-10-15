@@ -33,7 +33,7 @@ function myBills (qbo, attribute, db, callback) {
     callback();    
 }
 
-function updateObject(attribute, qbo) {
+function updateObject(attribute, qbo, db) {
     if (attribute === "Customers") {
         myCustomers(qbo, attribute, db, function() {
             mongot.findDocuments(db, attribute, (result) => {
@@ -56,11 +56,12 @@ function updateObject(attribute, qbo) {
 }
 
 //  Update databases async and return a JSON object
-exports.sendStuff = function (db, qbo, callback) {
-    attributeArray.forEach(function(attribute) { 
+exports.sendStuff = function(db, qbo, callback) {
+    var myArr = ["Customers", "Bills", "Invoice"];
+    myArr.forEach(function(attribute) { 
         // Clear database collection
         mongot.removeDocuments(db, attribute, function() {
-            updateObject (attribute, db);
+            updateObject (attribute, qbo, db);
         });        
     });
     callback();    

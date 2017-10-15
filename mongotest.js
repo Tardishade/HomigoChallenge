@@ -4,21 +4,26 @@ var assert = require('assert');
 var url = 'mongodb://localhost:27017/homigoChallenge';
 
 exports.insertDocument = function(db, collection, document, callback) {
-  var myCollection = db.collection(collection);
-  myCollection.insert(document, (err, result) => {
-    if(err) {
-      console.log("Document insert error");
-    } else {
-      console.log("inserted document");
-      callback();  
-    }
-  });
+    var myCollection = db.collection(collection);
+    myCollection.insert(document, (err, result) => {
+        if(err) {
+            console.log("Document insert error");
+        } else {
+            console.log("inserted document");
+            callback();  
+        }
+    });
 };
 
 exports.findDocuments = function(db, attribute, callback) {
     var collection = db.collection(attribute);
     collection.find({}).toArray((err, result) => {
-      callback(result);
+        if (err) {
+            console.log("Error finding documents")
+        } else {
+            console.log("Found documents")
+            callback(result);
+        }
     });
 };
 
@@ -26,8 +31,10 @@ exports.removeDocuments = function(db, collection, callback) {
     // Get the documents collection
     var myCollection = db.collection(collection);
     // Delete all documents
-    myCollection.remove();
-    callback();
+    myCollection.remove({}, (err, result) => {
+        if (err) return;
+        callback();
+    });
 };
 
 exports.createSpecialArray = function(collection, data) {

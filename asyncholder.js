@@ -1,6 +1,6 @@
 var MongoClient = require('mongodb').MongoClient;
 var assert = require('assert');
-var url = 'mongodb://localhost:27017/homigoChallenge';
+var url = 'mongodb://localhost:27017/IntuitAPIChallenge;
 var mongot = require('./mongotest.js');
 
 exports.attributeArray = ["Customers", "Bills", "Invoice"];

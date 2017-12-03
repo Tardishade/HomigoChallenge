@@ -1,5 +1,5 @@
 {
-  "name": "homigochallenge",
+  "name": "IntuitAPU",
   "version": "1.0.0",
   "description": "",
   "main": "app.js",
@@ -8,14 +8,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Tardishade/HomigoChallenge.git"
+    "url": "https://github.com/Tardishade/IntuitAPIChallenge.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/Tardishade/HomigoChallenge/issues"
+    "url": "https://github.com/Tardishade/IntuitAPIChallenge/issues"
   },
-  "homepage": "https://github.com/Tardishade/HomigoChallenge#readme",
+  "homepage": "https://github.com/Tardishade/IntuitAPIChallenge#readme",
   "dependencies": {
     "async": "^2.5.0",
     "body-parser": "^1.13.3",
